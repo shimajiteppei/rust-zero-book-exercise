@@ -10,12 +10,6 @@ pub enum AST {
     Seq(Vec<AST>),
 }
 
-enum Quantifiers {
-    Plus,
-    Star,
-    Question,
-}
-
 #[derive(Debug)]
 pub enum ParseError {
     InvalidEscape(usize, char),
