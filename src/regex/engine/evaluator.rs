@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::Display};
 
-use super::Instruction;
+use super::codegen::Instruction;
 
 #[derive(Debug)]
 pub enum EvalError {
@@ -18,7 +18,7 @@ impl Display for EvalError {
 
 impl Error for EvalError {}
 
-fn eval_depth(
+fn exact_eval_depth(
     inst: &[Instruction],
     line: &[char],
     mut pc: usize,
@@ -48,11 +48,46 @@ fn eval_depth(
                 }
                 None => return Ok(false),
             },
+            Instruction::AnyChar => match line.get(sp) {
+                Some(_) => {
+                    match pc.checked_add(1) {
+                        Some(res) => pc = res,
+                        None => return Err(EvalError::PCOverFlow),
+                    };
+                    match sp.checked_add(1) {
+                        Some(res) => sp = res,
+                        None => return Err(EvalError::SPOverFlow),
+                    };
+                }
+                None => return Ok(false),
+            },
             Instruction::Match => return Ok(true),
             Instruction::Jump(addr) => pc = *addr,
             Instruction::Split(addr1, addr2) => {
-                if eval_depth(inst, line, *addr1, sp)? || eval_depth(inst, line, *addr2, sp)? {
+                if exact_eval_depth(inst, line, *addr1, sp)?
+                    || exact_eval_depth(inst, line, *addr2, sp)?
+                {
                     return Ok(true);
+                } else {
+                    return Ok(false);
+                }
+            }
+            Instruction::AssertHead => {
+                if sp == 0 {
+                    match pc.checked_add(1) {
+                        Some(res) => pc = res,
+                        None => return Err(EvalError::PCOverFlow),
+                    };
+                } else {
+                    return Ok(false);
+                }
+            }
+            Instruction::AssertTail => {
+                if sp == line.len() {
+                    match pc.checked_add(1) {
+                        Some(res) => pc = res,
+                        None => return Err(EvalError::PCOverFlow),
+                    };
                 } else {
                     return Ok(false);
                 }
@@ -61,13 +96,23 @@ fn eval_depth(
     }
 }
 
+fn eval_depth(inst: &[Instruction], line: &[char]) -> Result<bool, EvalError> {
+    for (i, _) in line.iter().enumerate() {
+        let matched = exact_eval_depth(inst, line, 0, i)?;
+        if matched {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
 fn eval_width(_inst: &[Instruction], _line: &[char]) -> Result<bool, EvalError> {
     todo!()
 }
 
 pub fn eval(inst: &[Instruction], line: &[char], is_depth: bool) -> Result<bool, EvalError> {
     if is_depth {
-        eval_depth(inst, line, 0, 0)
+        eval_depth(inst, line)
     } else {
         eval_width(inst, line)
     }

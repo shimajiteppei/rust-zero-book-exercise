@@ -8,6 +8,9 @@ pub enum AST {
     Question(Box<AST>),
     Or(Box<AST>, Box<AST>),
     Seq(Vec<AST>),
+    Period,
+    Caret,
+    Dollar,
 }
 
 #[derive(Debug)]
@@ -63,7 +66,9 @@ pub fn parse(expr: &str) -> Result<AST, ParseError> {
     for (i, c) in expr.chars().enumerate() {
         if state.escape {
             match c {
-                '\\' | '(' | ')' | '|' | '+' | '*' | '?' => state.ast_seq.push(AST::Char(c)),
+                '\\' | '(' | ')' | '|' | '+' | '*' | '?' | '.' | '^' | '$' => {
+                    state.ast_seq.push(AST::Char(c))
+                }
                 _ => return Err(ParseError::InvalidEscape(i, c)),
             }
             state.escape = false;
@@ -108,6 +113,15 @@ pub fn parse(expr: &str) -> Result<AST, ParseError> {
                 }
                 '\\' => {
                     state.escape = true;
+                }
+                '.' => {
+                    state.ast_seq.push(AST::Period);
+                }
+                '^' => {
+                    state.ast_seq.push(AST::Caret);
+                }
+                '$' => {
+                    state.ast_seq.push(AST::Dollar);
                 }
                 _ => {
                     state.ast_seq.push(AST::Char(c));

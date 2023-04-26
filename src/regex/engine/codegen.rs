@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::Display};
 
-use super::{parser::AST, Instruction};
+use super::parser::AST;
 
 #[derive(Debug)]
 pub enum CodeGenError {
@@ -17,6 +17,31 @@ impl Display for CodeGenError {
 }
 
 impl Error for CodeGenError {}
+
+#[derive(Debug)]
+pub enum Instruction {
+    Char(char),
+    Match,
+    Jump(usize),
+    Split(usize, usize),
+    AnyChar,
+    AssertHead,
+    AssertTail,
+}
+
+impl Display for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Instruction::Char(c) => write!(f, "char {c}"),
+            Instruction::Match => write!(f, "match"),
+            Instruction::Jump(addr) => write!(f, "jump {:>04}", addr),
+            Instruction::Split(addr1, addr2) => write!(f, "split {:>04} {:>04}", addr1, addr2),
+            Instruction::AnyChar => write!(f, "period"),
+            Instruction::AssertHead => write!(f, "caret"),
+            Instruction::AssertTail => write!(f, "dollar"),
+        }
+    }
+}
 
 #[derive(Default, Debug)]
 struct Generator {
@@ -37,18 +62,21 @@ impl Generator {
 
     fn gen_expr(&mut self, ast: &AST) -> Result<(), CodeGenError> {
         match ast {
-            AST::Char(c) => self.gen_char(*c)?,
+            AST::Char(c) => self.gen_single_inst(Instruction::Char(*c))?,
             AST::Plus(e) => self.gen_plus(e)?,
             AST::Star(e) => self.gen_star(e)?,
             AST::Question(e) => self.gen_question(e)?,
             AST::Or(e1, e2) => self.gen_or(e1, e2)?,
             AST::Seq(seq) => self.gen_seq(seq)?,
+            AST::Period => self.gen_single_inst(Instruction::AnyChar)?,
+            AST::Caret => self.gen_single_inst(Instruction::AssertHead)?,
+            AST::Dollar => self.gen_single_inst(Instruction::AssertTail)?,
         };
         Ok(())
     }
 
-    fn gen_char(&mut self, c: char) -> Result<(), CodeGenError> {
-        self.insts.push(Instruction::Char(c));
+    fn gen_single_inst(&mut self, inst: Instruction) -> Result<(), CodeGenError> {
+        self.insts.push(inst);
         self.inc_pc()?;
         Ok(())
     }

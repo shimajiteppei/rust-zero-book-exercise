@@ -1,27 +1,8 @@
-use std::{error::Error, fmt::Display};
+use std::error::Error;
 
 mod codegen;
 mod evaluator;
 mod parser;
-
-#[derive(Debug)]
-pub enum Instruction {
-    Char(char),
-    Match,
-    Jump(usize),
-    Split(usize, usize),
-}
-
-impl Display for Instruction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Instruction::Char(c) => write!(f, "char {c}"),
-            Instruction::Match => write!(f, "match"),
-            Instruction::Jump(addr) => write!(f, "jump {:>04}", addr),
-            Instruction::Split(addr1, addr2) => write!(f, "split {:>04} {:>04}", addr1, addr2),
-        }
-    }
-}
 
 pub type DynError = Box<dyn Error + 'static>;
 
@@ -37,19 +18,47 @@ mod tests {
     use crate::regex::engine::do_matching;
 
     #[test]
-    fn test_matching() {
+    fn test_invalid_regex() {
         assert!(do_matching("+b", "bbb", true).is_err());
         assert!(do_matching("*b", "bbb", true).is_err());
         assert!(do_matching("|b", "bbb", true).is_err());
         assert!(do_matching("?b", "bbb", true).is_err());
+        assert!(!do_matching("a^bc", "abc", true).unwrap());
+        assert!(!do_matching("ab$c", "abc", true).unwrap());
+    }
 
+    #[test]
+    fn test_matching() {
         assert!(do_matching("abc", "abc", true).unwrap());
+        assert!(do_matching("abc", "dabc", true).unwrap());
         assert!(do_matching("abc|def", "def", true).unwrap());
         assert!(do_matching("(abc)*", "abcabcabc", true).unwrap());
         assert!(do_matching("(ab|cd)+", "abcdcd", true).unwrap());
         assert!(do_matching("a(bc)?", "a", true).unwrap());
 
+        assert!(do_matching("a.c", "abc", true).unwrap());
+        assert!(do_matching("a.*", "abc", true).unwrap());
+        assert!(do_matching(".+", "abc", true).unwrap());
+        assert!(do_matching("^abc", "abc", true).unwrap());
+        assert!(do_matching("abc$", "abc", true).unwrap());
+        assert!(do_matching("^abc$", "abc", true).unwrap());
+        assert!(do_matching("^ab.*c$", "abababccccabc", true).unwrap());
+        assert!(do_matching("bc|(d$)|((^a))", "abdc", true).unwrap());
+    }
+
+    #[test]
+    fn test_not_matching() {
         assert!(!do_matching("abc|def", "bcd", true).unwrap());
         assert!(!do_matching("abc?", "ac", true).unwrap());
+        assert!(!do_matching(".+", "", true).unwrap());
+    }
+
+    #[test]
+    fn test_partial_matching() {
+        assert!(do_matching("abc", "abcdef", true).unwrap());
+        assert!(do_matching("abc|def", "abdef", true).unwrap());
+        assert!(do_matching("(abc)*", "aaaaaabcabcabc", true).unwrap());
+        assert!(do_matching("(ab|cd)+", "aaacbcbdcd", true).unwrap());
+        assert!(do_matching("a(bc)?", "a", true).unwrap());
     }
 }
