@@ -18,7 +18,7 @@ impl Display for CodeGenError {
 
 impl Error for CodeGenError {}
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Instruction {
     Char(char),
     Match,
