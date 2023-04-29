@@ -1,8 +1,7 @@
 use std::{
-    collections::{hash_map::DefaultHasher, HashSet, VecDeque},
+    collections::{HashSet, VecDeque},
     error::Error,
     fmt::Display,
-    hash::{Hash, Hasher},
 };
 
 use super::codegen::Instruction;
@@ -22,7 +21,7 @@ impl Display for EvalError {
 
 impl Error for EvalError {}
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq)]
 struct RegisterContext {
     /// program counter
     pc: usize,
@@ -32,9 +31,7 @@ struct RegisterContext {
 
 impl RegisterContext {
     fn calculate_hash(&self) -> u64 {
-        let mut s = DefaultHasher::new();
-        self.hash(&mut s);
-        s.finish()
+        (self.sp as u64) << 32 | (self.pc as u64)
     }
 
     fn incr_pc(&mut self) -> Result<(), EvalError> {
@@ -57,7 +54,7 @@ impl RegisterContext {
 enum MatchStatus {
     Success,
     Failed,
-    Continue(Option<Vec<RegisterContext>>),
+    Continue(Option<(RegisterContext, RegisterContext)>),
 }
 
 impl Instruction {
@@ -69,7 +66,7 @@ impl Instruction {
         split_fn: F,
     ) -> Result<MatchStatus, EvalError>
     where
-        F: Fn(RegisterContext, RegisterContext) -> Result<MatchStatus, EvalError>,
+        F: FnOnce(RegisterContext, RegisterContext) -> Result<MatchStatus, EvalError>,
     {
         match self {
             Instruction::Char(c) => match line.get(ctx.sp) {
@@ -124,7 +121,7 @@ impl Instruction {
 }
 
 #[inline(always)]
-fn exact_eval_depth(
+fn exact_eval_depth_rec(
     inst: &[Instruction],
     line: &[char],
     ctx: &mut RegisterContext,
@@ -135,7 +132,8 @@ fn exact_eval_depth(
             None => return Err(EvalError::InvalidPC),
         }
         .eval_inst(line, ctx, |mut reg1, mut reg2| {
-            if exact_eval_depth(inst, line, &mut reg1)? || exact_eval_depth(inst, line, &mut reg2)?
+            if exact_eval_depth_rec(inst, line, &mut reg1)?
+                || exact_eval_depth_rec(inst, line, &mut reg2)?
             {
                 Ok(MatchStatus::Success)
             } else {
@@ -151,14 +149,14 @@ fn exact_eval_depth(
     }
 }
 
-fn eval_depth(inst: &[Instruction], line: &[char]) -> Result<bool, EvalError> {
-    for (i, _) in line.iter().enumerate() {
-        let matched = exact_eval_depth(inst, line, &mut RegisterContext { pc: 0, sp: i })?;
-        if matched {
-            return Ok(true);
-        }
-    }
-    Ok(false)
+#[inline(always)]
+fn exact_eval_depth(
+    inst: &[Instruction],
+    line: &[char],
+    ctx: &mut RegisterContext,
+) -> Result<bool, EvalError> {
+    // let mut ctx_set = HashSet::from([ctx.calculate_hash()]);
+    exact_eval_depth_rec(inst, line, ctx)
 }
 
 #[inline(always)]
@@ -182,18 +180,19 @@ fn exact_eval_width(
             None => return Err(EvalError::InvalidPC),
         }
         .eval_inst(line, &mut ctx, |reg1, reg2| {
-            Ok(MatchStatus::Continue(Some(vec![reg1, reg2])))
+            Ok(MatchStatus::Continue(Some((reg1, reg2))))
         })?;
 
         match status {
             MatchStatus::Success => return Ok(true),
             MatchStatus::Failed => {}
             MatchStatus::Continue(it) => match it {
-                Some(it) => {
-                    for ctx in it {
-                        if ctx_set.insert(ctx.calculate_hash()) {
-                            ctx_queue.push_back(ctx);
-                        }
+                Some((ctx1, ctx2)) => {
+                    if ctx_set.insert(ctx1.calculate_hash()) {
+                        ctx_queue.push_back(ctx1);
+                    }
+                    if ctx_set.insert(ctx2.calculate_hash()) {
+                        ctx_queue.push_back(ctx2);
                     }
                 }
                 None => {
@@ -206,20 +205,16 @@ fn exact_eval_width(
     }
 }
 
-fn eval_width(inst: &[Instruction], line: &[char]) -> Result<bool, EvalError> {
+pub fn eval(inst: &[Instruction], line: &[char], is_depth: bool) -> Result<bool, EvalError> {
     for (i, _) in line.iter().enumerate() {
-        let matched = exact_eval_width(inst, line, i)?;
+        let matched = if is_depth {
+            exact_eval_depth(inst, line, &mut RegisterContext { pc: 0, sp: i })
+        } else {
+            exact_eval_width(inst, line, i)
+        }?;
         if matched {
             return Ok(true);
         }
     }
     Ok(false)
-}
-
-pub fn eval(inst: &[Instruction], line: &[char], is_depth: bool) -> Result<bool, EvalError> {
-    if is_depth {
-        eval_depth(inst, line)
-    } else {
-        eval_width(inst, line)
-    }
 }
