@@ -34,3 +34,5 @@ Benchmarking Depth First/n=32 #2: Warming up for 3.0000 s
 Warning: Unable to complete 100 samples in 12.0s. You may wish to increase target time to 14984.8s, or reduce sample count to 10.
 Benchmarking Depth First/n=32 #2: Collecting 100 samples in estimated  14985 s (100 iterations)^C
 ```
+
+[OWASP の ReDoS 紹介ページ](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)に掲載されていた正規表現`(a|a?)+`を試すと、深さ優先探索の再帰処理がスタックオーバーフローした。

@@ -30,10 +30,12 @@ struct RegisterContext {
 }
 
 impl RegisterContext {
+    #[inline]
     fn calculate_hash(&self) -> u64 {
         (self.sp as u64) << 32 | (self.pc as u64)
     }
 
+    #[inline]
     fn incr_pc(&mut self) -> Result<(), EvalError> {
         match self.pc.checked_add(1) {
             Some(res) => self.pc = res,
@@ -42,6 +44,7 @@ impl RegisterContext {
         Ok(())
     }
 
+    #[inline]
     fn incr_sp(&mut self) -> Result<(), EvalError> {
         match self.sp.checked_add(1) {
             Some(res) => self.sp = res,
@@ -58,7 +61,7 @@ enum MatchStatus {
 }
 
 impl Instruction {
-    #[inline(always)]
+    #[inline]
     fn eval_inst<F>(
         self,
         line: &[char],
@@ -120,8 +123,9 @@ impl Instruction {
     }
 }
 
-#[inline(always)]
-fn exact_eval_depth_rec(
+/// TODO: (a?)+のようなε遷移のループを検出して処理をカットしたい。
+#[inline]
+fn exact_eval_depth(
     inst: &[Instruction],
     line: &[char],
     ctx: &mut RegisterContext,
@@ -132,8 +136,7 @@ fn exact_eval_depth_rec(
             None => return Err(EvalError::InvalidPC),
         }
         .eval_inst(line, ctx, |mut reg1, mut reg2| {
-            if exact_eval_depth_rec(inst, line, &mut reg1)?
-                || exact_eval_depth_rec(inst, line, &mut reg2)?
+            if exact_eval_depth(inst, line, &mut reg1)? || exact_eval_depth(inst, line, &mut reg2)?
             {
                 Ok(MatchStatus::Success)
             } else {
@@ -149,17 +152,7 @@ fn exact_eval_depth_rec(
     }
 }
 
-#[inline(always)]
-fn exact_eval_depth(
-    inst: &[Instruction],
-    line: &[char],
-    ctx: &mut RegisterContext,
-) -> Result<bool, EvalError> {
-    // let mut ctx_set = HashSet::from([ctx.calculate_hash()]);
-    exact_eval_depth_rec(inst, line, ctx)
-}
-
-#[inline(always)]
+#[inline]
 fn exact_eval_width(
     inst: &[Instruction],
     line: &[char],
