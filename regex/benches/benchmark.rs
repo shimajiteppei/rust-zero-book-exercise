@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use rust_zero_book_exercise::regex::engine::do_matching;
+use regex::engine::do_matching;
 use std::time::Duration;
 
 const REDOS_REGEX: &[(&str, &str, &str)] = &[

@@ -25,7 +25,7 @@ pub fn do_matching(expr: &str, line: &str, is_depth: bool) -> Result<bool, DynEr
 
 #[cfg(test)]
 mod tests {
-    use crate::regex::engine::do_matching;
+    use crate::engine::do_matching;
     use rstest::*;
 
     #[rstest]

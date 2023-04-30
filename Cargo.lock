@@ -78,9 +78,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.23"
+version = "3.2.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71655c45cb9845d3270c9d6df84ebe72b4dad3c2ba3f7023ad47c144e4e473a5"
+checksum = "4ea181bf566f71cb9a5d17a59e1871af638180a18fb0035c92ae62b705207123"
 dependencies = [
  "bitflags",
  "clap_lex",
@@ -115,7 +115,7 @@ dependencies = [
  "oorandom",
  "plotters",
  "rayon",
- "regex",
+ "regex 1.8.1",
  "serde",
  "serde_derive",
  "serde_json",
@@ -496,6 +496,14 @@ dependencies = [
 
 [[package]]
 name = "regex"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "rstest",
+]
+
+[[package]]
+name = "regex"
 version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af83e617f331cc6ae2da5443c602dfa5af81e517212d9d611a5b3ba1777b5370"
@@ -533,14 +541,6 @@ dependencies = [
  "rustc_version",
  "syn 1.0.109",
  "unicode-ident",
-]
-
-[[package]]
-name = "rust-zero-book-exercise"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "rstest",
 ]
 
 [[package]]
