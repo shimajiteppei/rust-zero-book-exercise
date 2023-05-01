@@ -36,3 +36,45 @@ Benchmarking Depth First/n=32 #2: Collecting 100 samples in estimated  14985 s (
 ```
 
 [OWASP の ReDoS 紹介ページ](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)に掲載されていた正規表現`(a|a?)+`を試すと、深さ優先探索の再帰処理がスタックオーバーフローした。
+
+### 7 章
+
+- https://qiita.com/ko1nksm/items/5018649160820006bdf6
+
+POSIX シェルで定義されているビルトインコマンド https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_09_01
+
+- special built-in utility
+  - break
+  - :
+  - continue
+  - .
+  - eval
+  - exec
+  - exit
+  - export
+  - readonly
+  - return
+  - set
+  - shift
+  - times
+  - trap
+  - unset
+- built-in utility
+  - alias
+  - bg
+  - cd
+  - command
+  - false
+  - fc
+  - fg
+  - getopts
+  - hash
+  - jobs
+  - kill
+  - newgrp
+  - pwd
+  - read
+  - true
+  - umask
+  - unalias
+  - wait
