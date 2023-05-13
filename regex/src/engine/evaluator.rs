@@ -123,45 +123,18 @@ impl Instruction {
     }
 }
 
-/// TODO: (a?)+のようなε遷移のループを検出して処理をカットしたい。
 #[inline]
-fn exact_eval_depth(
-    inst: &[Instruction],
-    line: &[char],
-    ctx: &mut RegisterContext,
-) -> Result<bool, EvalError> {
-    loop {
-        let eval = match inst.get(ctx.pc) {
-            Some(i) => *i,
-            None => return Err(EvalError::InvalidPC),
-        }
-        .eval_inst(line, ctx, |mut reg1, mut reg2| {
-            if exact_eval_depth(inst, line, &mut reg1)? || exact_eval_depth(inst, line, &mut reg2)?
-            {
-                Ok(MatchStatus::Success)
-            } else {
-                Ok(MatchStatus::Failed)
-            }
-        })?;
-
-        match eval {
-            MatchStatus::Success => return Ok(true),
-            MatchStatus::Failed => return Ok(false),
-            _ => {}
-        }
-    }
-}
-
-#[inline]
-fn exact_eval_width(
+fn exact_eval(
     inst: &[Instruction],
     line: &[char],
     init_sp: usize,
+    is_depth: bool,
 ) -> Result<bool, EvalError> {
     let init_reg = RegisterContext { pc: 0, sp: init_sp };
     let init_reg_hash = init_reg.calculate_hash();
     let mut ctx_queue = VecDeque::from([init_reg]);
     let mut ctx_set = HashSet::from([init_reg_hash]);
+
     loop {
         let mut ctx = match ctx_queue.pop_front() {
             Some(it) => it,
@@ -181,16 +154,29 @@ fn exact_eval_width(
             MatchStatus::Failed => {}
             MatchStatus::Continue(it) => match it {
                 Some((ctx1, ctx2)) => {
-                    if ctx_set.insert(ctx1.calculate_hash()) {
-                        ctx_queue.push_back(ctx1);
-                    }
-                    if ctx_set.insert(ctx2.calculate_hash()) {
-                        ctx_queue.push_back(ctx2);
+                    if is_depth {
+                        if ctx_set.insert(ctx2.calculate_hash()) {
+                            ctx_queue.push_front(ctx2);
+                        }
+                        if ctx_set.insert(ctx1.calculate_hash()) {
+                            ctx_queue.push_front(ctx1);
+                        }
+                    } else {
+                        if ctx_set.insert(ctx1.calculate_hash()) {
+                            ctx_queue.push_back(ctx1);
+                        }
+                        if ctx_set.insert(ctx2.calculate_hash()) {
+                            ctx_queue.push_back(ctx2);
+                        }
                     }
                 }
                 None => {
                     if ctx_set.insert(ctx.calculate_hash()) {
-                        ctx_queue.push_back(ctx);
+                        if is_depth {
+                            ctx_queue.push_front(ctx);
+                        } else {
+                            ctx_queue.push_back(ctx);
+                        }
                     }
                 }
             },
@@ -200,12 +186,7 @@ fn exact_eval_width(
 
 pub fn eval(inst: &[Instruction], line: &[char], is_depth: bool) -> Result<bool, EvalError> {
     for (i, _) in line.iter().enumerate() {
-        let matched = if is_depth {
-            exact_eval_depth(inst, line, &mut RegisterContext { pc: 0, sp: i })
-        } else {
-            exact_eval_width(inst, line, i)
-        }?;
-        if matched {
+        if exact_eval(inst, line, i, is_depth)? {
             return Ok(true);
         }
     }
