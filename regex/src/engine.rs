@@ -61,6 +61,8 @@ mod tests {
     #[case("(abc)*", "aaaaaabcabcabc")]
     #[case("(ab|cd)+", "aaacbcbdcd")]
     #[case("a(bc)?", "a")]
+    #[case("^^^^^^^^^^^^a$$$$$$$$$$$$$$$$$$$$$$$$$$", "a")]
+    // #[case("^.a$", "⛹‍♂a")]
     fn test_match_success(#[case] expr: &str, #[case] line: &str) {
         assert!(do_matching(expr, line, true).unwrap());
         assert!(do_matching(expr, line, false).unwrap());
