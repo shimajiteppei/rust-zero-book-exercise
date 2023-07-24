@@ -2,4 +2,7 @@
 members = [
     "regex",
     "shell",
+    "debugger/ackerman",
+    "debugger/irq_test",
+    "debugger/zdbg",
 ]

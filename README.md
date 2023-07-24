@@ -80,37 +80,49 @@ Depth First/Cox like:n=128      time:   [30.281 µs 30.303 µs 30.326 µs]
 POSIX シェルで定義されているビルトインコマンド https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_09_01
 
 - special built-in utility
-  - break
-  - :
-  - continue
-  - .
-  - eval
-  - exec
-  - exit
-  - export
-  - readonly
-  - return
-  - set
-  - shift
-  - times
-  - trap
-  - unset
+  - [ ] break
+  - [ ] :
+  - [ ] continue
+  - [ ] .
+  - [ ] eval
+  - [ ] exec
+  - [x] exit
+  - [ ] export
+  - [ ] readonly
+  - [ ] return
+  - [ ] set
+  - [ ] shift
+  - [ ] times
+  - [ ] trap
+  - [ ] unset
 - built-in utility
-  - alias
-  - bg
-  - cd
-  - command
-  - false
-  - fc
-  - fg
-  - getopts
-  - hash
-  - jobs
-  - kill
-  - newgrp
-  - pwd
-  - read
-  - true
-  - umask
-  - unalias
-  - wait
+  - [ ] alias
+  - [ ] bg
+  - [x] cd
+  - [ ] command
+  - [ ] false
+  - [ ] fc
+  - [x] fg
+  - [ ] getopts
+  - [ ] hash
+  - [x] jobs
+  - [ ] kill
+  - [ ] newgrp
+  - [ ] pwd
+  - [ ] read
+  - [ ] true
+  - [ ] umask
+  - [ ] unalias
+  - [ ] wait
+
+### 8 章
+
+- https://ja.wikipedia.org/wiki/%E3%82%A2%E3%83%83%E3%82%AB%E3%83%BC%E3%83%9E%E3%83%B3%E9%96%A2%E6%95%B0
+
+`cd irq_test && cargo build`で実行可能ファイルを生成したあと、`objdump -d`で逆アセンブルする。
+
+`irq_test`に移動しないと`.cargo/config.toml`に設定した内容が反映されないようである。
+
+`<main>`や`int3`などで検索すると`main`関数の部分が特定できる。
+
+`nop`の部分にブレークポイントを張ったのが本文 p.230 からの動作となっている。
